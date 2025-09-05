@@ -11,10 +11,9 @@ class ViewController: UIViewController {
 
     //MARK: Properties
     
-    var postsList: [PostDetails] = []
     let tableView = UITableView()
     let titleLabel = UILabel()
-    var networkManager = NetworkManager.shared
+    var postDetailsViewModel: PostDetailsViewModel = PostDetailsViewModel()
     
     //MARK: View Lifecycle Methods
     
@@ -22,8 +21,9 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         setupDelegates()
         setupUI()
-        getDataFromServer()
-        
+        postDetailsViewModel.getDataFromServer { [weak self] in
+            self?.tableView.reloadData()
+        }
     }
 }
 
@@ -32,14 +32,14 @@ class ViewController: UIViewController {
 extension ViewController: UITableViewDataSource{
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        postsList.count
+        postDetailsViewModel.getNumberOfRows()
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: PostTableCell.reuseIdentifier, for: indexPath) as? PostTableCell else {
             return UITableViewCell()
         }
-        cell.loadCellData(post: postsList[indexPath.row])
+        cell.loadCellData(post: postDetailsViewModel.getPostDetails(at: indexPath.row))
         return cell
     }
 }
@@ -81,17 +81,6 @@ extension ViewController {
     
     func setupDelegates() {
         tableView.dataSource = self
-    }
-        
-    func getDataFromServer(completion: (() -> Void)? = nil) {
-        networkManager.getData(from: Server.endPoint.rawValue) { [weak self] fetchedList in
-            guard let self = self else { return }
-            self.postsList = fetchedList
-            DispatchQueue.main.async {
-                self.tableView.reloadData()
-                completion?()
-            }
-        }
     }
 }
 
